@@ -10,36 +10,41 @@ export default function Dashboard() {
   const [activePlayerId, setActivePlayerId] = useState<string>('p1');
 
   return (
-    <div className="w-full h-full flex flex-col relative z-10 overflow-hidden text-slate-200">
+    <div className="w-full h-screen flex flex-col relative z-10 overflow-hidden text-slate-200 px-2 pt-1 pb-2">
       <TopBar />
-      
-      <div className="flex-1 min-h-0 flex gap-4 overflow-x-auto overflow-y-hidden pb-2" style={{minWidth: '1200px'}}>
-        {/* Column 1: Sidebar Roster (approx 300px fixed in component) */}
-        <SidebarRoster activePlayerId={activePlayerId} onSelectPlayer={setActivePlayerId} />
-        
-        {/* Column 2: Ficha y Tendencias (approx 25%) */}
-        <div className="flex-1 min-w-[320px] max-w-[400px]">
+
+      <div className="flex-1 min-h-0 grid grid-cols-12 gap-3 overflow-hidden pb-6">
+        {/* Columna 1: Plantilla (2 cols) */}
+        <div className="col-span-2 min-h-0 h-full overflow-hidden">
+          <SidebarRoster activePlayerId={activePlayerId} onSelectPlayer={setActivePlayerId} />
+        </div>
+
+        {/* Columna 2: Carta FUT + Reporte Técnico (3 cols) */}
+        <div className="col-span-3 min-h-0 h-full overflow-y-auto pr-1 custom-scrollbar">
           <PlayerOverview playerId={activePlayerId} />
         </div>
 
-        {/* Column 3: Visión y Pitch (Wide) */}
-        <div className="flex-[1.5] min-w-[450px] overflow-y-auto pr-2 custom-scrollbar">
+        {/* Columna 3: Visión IA en Vivo + Mapa de Influencia (4 cols) */}
+        <div className="col-span-4 min-h-0 h-full overflow-y-auto pr-1 custom-scrollbar">
           <TacticalPitch playerId={activePlayerId} />
         </div>
 
-        {/* Column 4: Radar y Métricas (Narrow) */}
-        <div className="flex-1 min-w-[250px] max-w-[300px] overflow-y-auto pr-2 custom-scrollbar">
+        {/* Columna 4: TZANiX Aether Core 1v1 + Radar + Tendencias (3 cols) */}
+        <div className="col-span-3 min-h-0 h-full overflow-y-auto pr-1 custom-scrollbar">
           <TacticalMetrics playerId={activePlayerId} />
         </div>
       </div>
 
       {/* Footer Status Bar */}
-      <div className="absolute bottom-2 right-4 flex items-center gap-4 text-[9px] text-slate-500 font-mono tracking-widest bg-black/40 py-1 px-4 rounded-full border border-white/5">
-        <span className="flex items-center gap-2"><div className="w-1.5 h-1.5 rounded-full bg-slate-300"></div> CONNECTED 11:21</span>
+      <div className="absolute bottom-1 right-4 flex items-center gap-4 text-[9px] text-slate-400 font-mono tracking-widest bg-[#0b1320]/90 py-1 px-4 rounded-full border border-[#00f2fe]/20">
+        <span className="flex items-center gap-2">
+          <span className="w-1.5 h-1.5 rounded-full bg-[#00f2fe] animate-pulse"></span>
+          TZANiX AETHER CORE: ONLINE (1.85 µs)
+        </span>
         <span>|</span>
-        <span>SESSION: 75_M360</span>
+        <span>CEFOR 1v1 & DRON 4K</span>
         <span>|</span>
-        <span>JULY 23, 2026</span>
+        <span>M-360 SPORTS IQ v2.4</span>
       </div>
     </div>
   );
