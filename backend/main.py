@@ -1,9 +1,15 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, UploadFile, File
 from fastapi.middleware.cors import CORSMiddleware
-import math
-from backend.aether_bridge import AetherCoreBiomechanicsBridge, AETHER_NATIVE_ACTIVE
+from fastapi.responses import StreamingResponse
+import shutil
+import time
+import cv2
+import numpy as np
+import os
+from backend.video_tracker import RealVideoPlayerTracker
+from backend.aether_bridge import AETHER_NATIVE_ACTIVE
 
-app = FastAPI(title="CEFOR VIDEO — Motor Geométrico y Biomecánico (TZANiX Aether Core)")
+app = FastAPI(title="CEFOR VIDEO — Subida de Videos & Rastreo Real de Jugadores")
 
 app.add_middleware(
     CORSMiddleware,
@@ -13,35 +19,114 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-aether_engine = AetherCoreBiomechanicsBridge(fps=30)
+UPLOAD_DIR = os.path.join("backend", "uploads")
+os.makedirs(UPLOAD_DIR, exist_ok=True)
 
-@app.get("/api/cefor/status")
-def get_cefor_status(frame: int = 30):
-    phase = frame * 0.15
-    attacker_kps = {
-        "hip": [480.0, 310.0 + math.sin(phase) * 18.0],
-        "knee": [495.0, 390.0],
-        "ankle": [470.0 + math.cos(phase) * 25.0, 470.0],
-        "l_shoulder": [455.0, 220.0],
-        "r_shoulder": [515.0, 232.0 + math.sin(phase) * 14.0],
-        "l_hip": [465.0, 310.0],
-        "r_hip": [500.0, 312.0],
-        "speed_px": 28.5,
-    }
-    defender_kps = {
-        "hip": [640.0 + math.cos(phase) * 35.0, 305.0],
-        "cog_drop": 24.0,
-        "knee_angle_inv": 38.0,
-        "speed_px": 21.0,
-    }
-    duel_metrics = aether_engine.analyze_duel_frame(frame, attacker_kps, defender_kps)
+# Estado global del video cargado por el usuario (empieza vacío hasta que el usuario suba uno)
+CURRENT_VIDEO_STATE = {
+    "video_path": None,
+    "filename": None,
+}
+
+tracker = RealVideoPlayerTracker()
+
+
+@app.post("/api/upload-video")
+async def upload_video(file: UploadFile = File(...)):
+    """
+    Recibe cualquier archivo de video (.mp4, .mov, .avi) desde el navegador,
+    lo guarda en backend/uploads y reinicia el rastreador real de jugadores.
+    """
+    safe_name = os.path.basename(file.filename or "partido_cefor.mp4")
+    dest_path = os.path.join(UPLOAD_DIR, safe_name)
+
+    with open(dest_path, "wb") as buffer:
+        shutil.copyfileobj(file.file, buffer)
+
+    CURRENT_VIDEO_STATE["video_path"] = dest_path
+    CURRENT_VIDEO_STATE["filename"] = safe_name
+    tracker.tracks.clear()
 
     return {
-        "engine": "TZANiX Aether Core v0.1.0 (SHANNON_LUT 64-byte aligned)",
-        "native_dll_active": AETHER_NATIVE_ACTIVE,
-        "metrics": duel_metrics,
+        "status": "uploaded",
+        "filename": safe_name,
+        "stream_url": "/api/video_feed",
     }
 
-@app.get("/api/health")
-def health_check():
-    return {"status": "ok", "system": "CEFOR VIDEO + TZANiX Aether Core"}
+
+@app.post("/api/clear-video")
+def clear_video():
+    CURRENT_VIDEO_STATE["video_path"] = None
+    CURRENT_VIDEO_STATE["filename"] = None
+    tracker.tracks.clear()
+    return {"status": "cleared"}
+
+
+def generate_tracked_stream(mode: str = "dron", max_conn_m: float = 20.0):
+    """
+    Lee cuadro por cuadro el video subido por el usuario, detecta las siluetas reales
+    sobre el césped y dibuja los anillos/conexiones/esqueletos exactamente pegados a los jugadores.
+    """
+    last_path = CURRENT_VIDEO_STATE["video_path"]
+    cap = cv2.VideoCapture(last_path) if (last_path and os.path.exists(last_path)) else None
+    frame_idx = 0
+
+    while True:
+        cur_path = CURRENT_VIDEO_STATE["video_path"]
+        if cur_path != last_path:
+            if cap is not None:
+                cap.release()
+            last_path = cur_path
+            cap = cv2.VideoCapture(last_path) if (last_path and os.path.exists(last_path)) else None
+            frame_idx = 0
+
+        if cap is not None and cap.isOpened():
+            ret, frame = cap.read()
+            if not ret:
+                cap.set(cv2.CAP_PROP_POS_FRAMES, 0)
+                ret, frame = cap.read()
+
+            if ret and frame is not None:
+                frame_idx += 1
+                frame = cv2.resize(frame, (880, 495))
+                frame = tracker.process_and_draw(frame, frame_idx, mode=mode, max_conn_m=max_conn_m)
+            else:
+                frame = np.zeros((495, 880, 3), dtype=np.uint8)
+        else:
+            frame = np.zeros((495, 880, 3), dtype=np.uint8)
+            cv2.putText(
+                frame,
+                "SUBE UN VIDEO (.MP4) ARRIBA PARA INICIAR EL SEGUIMIENTO REAL",
+                (140, 245),
+                cv2.FONT_HERSHEY_SIMPLEX,
+                0.58,
+                (180, 195, 210),
+                1,
+                cv2.LINE_AA,
+            )
+
+        ok, buffer = cv2.imencode(".jpg", frame, [int(cv2.IMWRITE_JPEG_QUALITY), 82])
+        if ok:
+            yield (
+                b"--frame\r\n"
+                b"Content-Type: image/jpeg\r\n\r\n" + buffer.tobytes() + b"\r\n"
+            )
+        time.sleep(0.033)
+
+
+@app.get("/api/video_feed")
+def video_feed(mode: str = "dron", max_conn_m: float = 20.0):
+    return StreamingResponse(
+        generate_tracked_stream(mode=mode, max_conn_m=max_conn_m),
+        media_type="multipart/x-mixed-replace; boundary=frame",
+    )
+
+
+@app.get("/api/cefor/live-telemetry")
+def get_live_telemetry():
+    return {
+        "has_video": CURRENT_VIDEO_STATE["video_path"] is not None,
+        "filename": CURRENT_VIDEO_STATE["filename"],
+        "aether_native": AETHER_NATIVE_ACTIVE,
+        "telemetry": tracker.latest_telemetry,
+    }
