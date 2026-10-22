@@ -1,0 +1,54 @@
+@import url('https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;700&family=Teko:wght@400;600;700&display=swap');
+@import "tailwindcss";
+
+@theme {
+  --color-slate-900: #09090b;
+  --color-slate-800: #18181b;
+  --color-slate-700: #27272a;
+  
+  /* Elegant Premium Accents */
+  --color-brand-cyan: #71717a; /* Subtle metallic grey/silver instead of cyan */
+  --color-brand-cyan-bright: #e4e4e7; /* Soft white/silver */
+  --color-bg-dark: #09090b; /* Deep premium black */
+  --color-panel-bg: rgba(24, 24, 27, 0.7); /* Translucent dark glass */
+}
+
+@layer utilities {
+  .bg-dark-slate {
+    background-color: var(--color-bg-dark);
+  }
+  
+  .glass-panel-dense {
+    background-color: var(--color-panel-bg);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    border-radius: 1rem;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  }
+
+  .glow-border-cyan {
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+    backdrop-filter: blur(12px);
+  }
+
+  .text-brand-cyan {
+    color: var(--color-brand-cyan);
+  }
+
+  .fill-brand-cyan {
+    fill: var(--color-brand-cyan);
+  }
+
+  /* Scrollbar estético */
+  ::-webkit-scrollbar {
+    width: 4px;
+    height: 4px;
+  }
+  ::-webkit-scrollbar-track {
+    background: transparent; 
+  }
+  ::-webkit-scrollbar-thumb {
+    background: rgba(255,255,255,0.1); 
+    border-radius: 4px;
+  }
+}

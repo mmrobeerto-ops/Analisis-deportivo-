@@ -1,0 +1,11 @@
+venv/
+.venv/
+__pycache__/
+*.pyc
+node_modules/
+frontend_admin/node_modules/
+frontend_admin/.next/
+*.db
+*.mp4
+.env
+.DS_Store
