@@ -1,12 +1,9 @@
 import type { Metadata } from "next";
-import { Space_Grotesk } from "next/font/google";
 import "./globals.css";
 
-const spaceGrotesk = Space_Grotesk({ subsets: ["latin"], weight: ["400", "600", "700"] });
-
 export const metadata: Metadata = {
-  title: "M-360 Sports IQ v2.4",
-  description: "Centro de Analítica Biomecánica y Táctica Cognitiva",
+  title: "CEFOR VIDEO — Análisis Táctico & 1v1 (Prof. Edu Chio)",
+  description: "Plataforma de Videoanálisis Táctico desde Dron 4K y Duelos 1v1 a ras de suelo para CEFOR Profesor Chio.",
 };
 
 export default function RootLayout({
@@ -16,7 +13,10 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="es">
-      <body className={`bg-dark-slate text-slate-200 min-h-screen p-4 relative overflow-hidden flex`} style={{ fontFamily: "'Oswald', sans-serif" }}>
+      <body
+        className="bg-[#0b0f17] text-slate-200 min-h-screen overflow-y-auto overflow-x-auto antialiased"
+        style={{ fontFamily: "'Inter', system-ui, -apple-system, sans-serif" }}
+      >
         {children}
       </body>
     </html>
