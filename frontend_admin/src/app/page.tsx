@@ -460,10 +460,10 @@ export default function CeforDashboard() {
                       Haz clic en el botón verde <strong>📤 SUBIR VIDEO (.MP4)</strong> arriba a la derecha y selecciona cualquier video de cancha (dron o a ras de suelo).
                     </li>
                     <li>
-                      El motor OpenCV (`backend/video_tracker.py`) filtra el césped en HSV, detecta el contorno real de cada jugador y coloca el **anillo 3D exactamente en sus pies** (`foot_x`, `foot_y`).
+                      El motor OpenCV (<code>backend/video_tracker.py</code>) filtra el césped en HSV, detecta el contorno real de cada jugador y coloca el <strong>anillo 3D exactamente en sus pies</strong> (<code>foot_x</code>, <code>foot_y</code>).
                     </li>
                     <li>
-                      Además, las coordenadas detectadas actualizan en automático los puntos de esta cancha homográfica de $87 \times 55\text{ m}$.
+                      Además, las coordenadas detectadas actualizan en automático los puntos de esta cancha homográfica de <strong>87 × 55 m</strong>.
                     </li>
                   </ol>
                 </div>
